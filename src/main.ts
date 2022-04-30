@@ -1,16 +1,20 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {
+	App,
+	Editor,
+	MarkdownView,
+	Modal,
+	Notice,
+	Plugin,
+	PluginSettingTab,
+	Setting,
+	TFile,
+	TAbstractFile
+} from 'obsidian';
+import {DEFAULT_SETTINGS, SBSettingTab, SBSettings} from "./settings"
 
 // Remember to rename these classes and interfaces!
 
-interface SBSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: SBSettings = {
-	mySetting: 'default'
-}
-
-export default class MyPlugin extends Plugin {
+export default class ObsidianSB extends Plugin {
 	settings: SBSettings;
 
 	async onload() {
@@ -34,6 +38,21 @@ export default class MyPlugin extends Plugin {
 		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
 			console.log('click', evt);
 		});
+
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu, fileish: TAbstractFile) => {
+				if (!(fileish instanceof TFile)) {
+					menu.addItem((item) => {
+						item
+							.setTitle("Publish this folder 🚀")
+							.setIcon("document")
+							.onClick(async () => {
+								new Notice(fileish.path);
+							});
+					});
+				}
+			})
+		);
 	}
 
 	onunload() {
@@ -49,31 +68,3 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SBSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const {containerEl} = this;
-
-		containerEl.empty();
-
-		containerEl.createEl('h2', {text: 'Site Builder settings.'});
-
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					console.log('Secret: ' + value);
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-}
